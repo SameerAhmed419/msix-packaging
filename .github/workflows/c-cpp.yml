@@ -20,6 +20,8 @@ jobs:
       with:
         name: msix-packaging-complete
         path: |
-          .
-          !.git
+          **
+          .*
+          .*/
+          .vs/**
         retention-days: 5
