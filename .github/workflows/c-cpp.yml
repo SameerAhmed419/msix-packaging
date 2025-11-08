@@ -9,16 +9,46 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: configure
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build MSIX Packaging for Linux
       run: ./makelinux.sh --pack
-    - name: Upload .vs directory
+
+    - name: Diagnostics - Root Directory Listing
+      run: |
+        echo "::group::Workspace root directory"
+        ls -al
+        echo "::endgroup::"
+
+    - name: Diagnostics - .vs Directory Listing
+      run: |
+        if [ -d .vs ]; then
+          echo "::group::.vs directory contents"
+          ls -alR .vs
+          echo "::endgroup::"
+        else
+          echo "::error::'.vs' directory was NOT created!"
+        fi
+
+    - name: Upload .vs directory as artifact
       uses: actions/upload-artifact@v4
       with:
         name: msix-packaging-vs-artifact
-        path: |
-          .vs/**
-          ../.vs/**
+        path: .vs/**
         retention-days: 5
+
+    - name: Diagnostics - Artifact Upload Result
+      if: ${{ failure() }}
+      run: |
+        echo "::error::Artifact upload step failed."
+        echo "Common reasons:"
+        echo "1. The .vs directory was not created by the build step."
+        echo "2. The .vs directory exists but is EMPTY (GitHub Actions does NOT upload empty directories)."
+        echo "3. The build step failed (see logs above)."
+        echo "4. The .vs directory is created in a different location (not workspace root)."
+        echo "Tips:"
+        echo " - Check that the ./makelinux.sh script creates .vs in workspace root."
+        echo " - Check the diagnostic file listings above for errors or missing files."
+        echo " - If necessary, edit makelinux.sh to echo the location and creation of .vs."
