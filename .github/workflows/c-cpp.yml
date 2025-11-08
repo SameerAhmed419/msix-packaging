@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -16,39 +17,50 @@ jobs:
     - name: Build MSIX Packaging for Linux
       run: ./makelinux.sh --pack
 
-    - name: Diagnostics - Root Directory Listing
+    - name: Diagnostics - Workspace root directory
       run: |
         echo "::group::Workspace root directory"
         ls -al
         echo "::endgroup::"
 
-    - name: Diagnostics - .vs Directory Listing
+    - name: Diagnostics - .vs Directory Listing recursive
       run: |
         if [ -d .vs ]; then
-          echo "::group::.vs directory contents"
-          ls -alR .vs
+          echo "::group::.vs directory contents (recursive)"
+          find .vs | xargs ls -ld
           echo "::endgroup::"
         else
-          echo "::error::'.vs' directory was NOT created!"
+          echo "::error::.vs directory was NOT created!"
         fi
 
-    - name: Upload .vs directory as artifact
+    - name: Diagnostics - Count all files in .vs
+      run: |
+        count=$(find .vs -type f | wc -l)
+        echo "Files found in .vs: $count"
+        if [ "$count" -eq 0 ]; then
+          echo "::error::No files found in .vs! Artifact upload will fail unless files exist."
+        fi
+        mv .vs vs-files
+
+    - name: Upload all .vs contents (including files in subfolders)
       uses: actions/upload-artifact@v4
       with:
         name: msix-packaging-vs-artifact
-        path: .vs
+        path: |
+          vs-files/**/*
+          .
         retention-days: 5
 
     - name: Diagnostics - Artifact Upload Result
       if: ${{ failure() }}
       run: |
         echo "::error::Artifact upload step failed."
+        echo "Review logs above for diagnostics."
         echo "Common reasons:"
-        echo "1. The .vs directory was not created by the build step."
-        echo "2. The .vs directory exists but is EMPTY (GitHub Actions does NOT upload empty directories)."
-        echo "3. The build step failed (see logs above)."
-        echo "4. The .vs directory is created in a different location (not workspace root)."
+        echo "1. The .vs directory does not exist at all."
+        echo "2. The .vs directory exists but contains NO files (upload expects files, not just directories)."
+        echo "3. All files inside .vs are hidden/unmatched by the glob."
+        echo "4. The build output path is not .vs, or files are elsewhere."
         echo "Tips:"
-        echo " - Check that the ./makelinux.sh script creates .vs in workspace root."
-        echo " - Check the diagnostic file listings above for errors or missing files."
-        echo " - If necessary, edit makelinux.sh to echo the location and creation of .vs."
+        echo " - See the recursive directory listing and file count diagnostics above."
+        echo " - Check if ./makelinux.sh --pack prints errors or fails to generate build outputs."
