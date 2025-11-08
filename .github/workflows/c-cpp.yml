@@ -17,29 +17,8 @@ jobs:
     - name: Build MSIX Packaging for Linux
       run: ./makelinux.sh --pack
 
-    - name: Diagnostics - Workspace root directory
+    - name: move .vs to vs-files
       run: |
-        echo "::group::Workspace root directory"
-        ls -al
-        echo "::endgroup::"
-
-    - name: Diagnostics - .vs Directory Listing recursive
-      run: |
-        if [ -d .vs ]; then
-          echo "::group::.vs directory contents (recursive)"
-          find .vs | xargs ls -ld
-          echo "::endgroup::"
-        else
-          echo "::error::.vs directory was NOT created!"
-        fi
-
-    - name: Diagnostics - Count all files in .vs
-      run: |
-        count=$(find .vs -type f | wc -l)
-        echo "Files found in .vs: $count"
-        if [ "$count" -eq 0 ]; then
-          echo "::error::No files found in .vs! Artifact upload will fail unless files exist."
-        fi
         mv .vs vs-files
 
     - name: Upload all .vs contents (including files in subfolders)
@@ -50,17 +29,3 @@ jobs:
           vs-files/**/*
           .
         retention-days: 5
-
-    - name: Diagnostics - Artifact Upload Result
-      if: ${{ failure() }}
-      run: |
-        echo "::error::Artifact upload step failed."
-        echo "Review logs above for diagnostics."
-        echo "Common reasons:"
-        echo "1. The .vs directory does not exist at all."
-        echo "2. The .vs directory exists but contains NO files (upload expects files, not just directories)."
-        echo "3. All files inside .vs are hidden/unmatched by the glob."
-        echo "4. The build output path is not .vs, or files are elsewhere."
-        echo "Tips:"
-        echo " - See the recursive directory listing and file count diagnostics above."
-        echo " - Check if ./makelinux.sh --pack prints errors or fails to generate build outputs."
