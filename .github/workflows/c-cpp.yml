@@ -36,7 +36,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: msix-packaging-vs-artifact
-        path: .vs/**
+        path: .vs
         retention-days: 5
 
     - name: Diagnostics - Artifact Upload Result
