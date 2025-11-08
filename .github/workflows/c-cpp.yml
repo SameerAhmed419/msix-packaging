@@ -8,20 +8,15 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
     - name: configure
       run: ./makelinux.sh --pack
-    - name: Upload entire workspace
+    - name: Upload .vs directory
       uses: actions/upload-artifact@v4
       with:
-        name: msix-packaging-complete
-        path: |
-          **
-          .*
-          .*/
-          .vs/**
+        name: msix-packaging-vs-artifact
+        path: .vs/**
         retention-days: 5
