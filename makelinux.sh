@@ -71,5 +71,6 @@ cmake -DCMAKE_BUILD_TYPE=$build \
       -DMSIX_PACK=$pack \
       -DMSIX_SAMPLES=$samples \
       -DMSIX_TESTS=$tests \
+      -Dtranscoder=gnuiconv \
       -DLINUX=on ..
 make
